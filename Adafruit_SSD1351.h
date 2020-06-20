@@ -103,9 +103,12 @@ public:
 
     // New fill screen command that allows us to use SPI DMA transfers. 
     void fill_screen(uint16_t color);
-    void draw_rgb_bitmap(int16_t x, int16_t y, uint16_t *pcolors, int16_t w, int16_t h);
-    void draw_horizontal_line(uint16_t color, uint8_t y);
-    void draw_vertical_line(uint16_t color, uint8_t x);
+
+    // INFO KEEP FRAMEBUFFER BEGIN //
+    void queue_pixel(uint8_t x, uint8_t y, uint16_t color);
+    void queue_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t col);
+    void draw_queue(void);
+    // INFO KEEP FRAMEBUFFER END // 
 
     // Variables that help us with DMA stuff
     EventResponder dma_event; 

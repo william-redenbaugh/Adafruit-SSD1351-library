@@ -286,8 +286,8 @@ void Adafruit_SSD1351::fill_screen(uint16_t color) {
     startWrite();
     setAddrWindow(0, 0, _width, _height);
 
-    for(uint8_t x = 0; x < _width; x++){
-        for(uint8_t y = 0; y < _height; y++){
+    for(uint8_t y = 0; y < _height; y++){
+        for(uint8_t x = 0; x < _width; x++){
             out_arr[i] = color >> 8;
             i++; 
             out_arr[i] = color; 
@@ -303,96 +303,6 @@ void Adafruit_SSD1351::fill_screen(uint16_t color) {
     // Should take about this long to push up animation
     chThdSleepMilliseconds(compl_speed);    
     endWrite();
-}
-
-void Adafruit_SSD1351::draw_rgb_bitmap(int16_t x, int16_t y, uint16_t *pcolors, int16_t w, int16_t h){
-  int16_t x2, y2; // Lower-right coord
-    if(( x             >= _width ) ||      // Off-edge right
-       ( y             >= _height) ||      // " top
-       ((x2 = (x+w-1)) <  0      ) ||      // " left
-       ((y2 = (y+h-1)) <  0)     ) return; // " bottom
-
-    int16_t bx1=0, by1=0, // Clipped top-left within bitmap
-            saveW=w;      // Save original bitmap width value
-    if(x < 0) { // Clip left
-        w  +=  x;
-        bx1 = -x;
-        x   =  0;
-    }
-    if(y < 0) { // Clip top
-        h  +=  y;
-        by1 = -y;
-        y   =  0;
-    }
-    if(x2 >= _width ) w = _width  - x; // Clip right
-    if(y2 >= _height) h = _height - y; // Clip bottom
-
-    pcolors += by1 * saveW + bx1; // Offset bitmap ptr to clipped top-left
-    startWrite();
-    setAddrWindow(x, y, w, h); // Clipped area
-
-    uint16_t i = 0; 
-    // Copy over pcolor data to out_arr data. 
-    for(uint8_t x_len = x; x_len < x2; x_len++){
-      for(uint8_t y_len = y; y_len < y2; y_len++){
-        out_arr[i] = pcolors[x_len * w + y_len] >> 8;
-        i++; 
-        out_arr[i] = pcolors[x_len * w + y_len];
-        i++;
-      }
-    }
-    // Doing a DMA transfer. 
-    hwspi._spi->transfer(out_arr, in_arr, w * h * 2, dma_event);
-
-    // Determining how long it will take to finish    
-    // Should take about this long to push up animation
-    uint32_t compl_speed = (i * 8)/36000 + 2;
-    chThdSleepMilliseconds(compl_speed);       
-}
-
-
-void Adafruit_SSD1351::draw_horizontal_line(uint16_t color, uint8_t y){
-  uint16_t i = 0; 
-  startWrite();
-  setAddrWindow(0, y, _width, y+1);
-
-  for(uint8_t x = 0; x < _height; x++){
-    out_arr[i] = color >> 8;
-    i++; 
-    out_arr[i] = color; 
-    i++;
-  }
-
-  uint32_t compl_speed = (i * 8)/36000 + 2;
-
-  // Doing a DMA transfer. 
-  hwspi._spi->transfer(out_arr, in_arr, _width * 2, dma_event);
-
-  // Should take about this long to push up animation
-  chThdSleepMilliseconds(compl_speed);    
-  endWrite();
-}
-
-void Adafruit_SSD1351::draw_vertical_line(uint16_t color, uint8_t x){
-  uint16_t i = 0; 
-  startWrite();
-  setAddrWindow(x, 0, x+1, _height);
-
-  for(uint8_t x = 0; x < _width; x++){
-    out_arr[i] = color >> 8;
-    i++; 
-    out_arr[i] = color; 
-    i++;
-  }
-
-  uint32_t compl_speed = (i * 8)/36000 + 2;
-
-  // Doing a DMA transfer. 
-  hwspi._spi->transfer(out_arr, in_arr, _height * 2, dma_event);
-
-  // Should take about this long to push up animation
-  chThdSleepMilliseconds(compl_speed);    
-  endWrite();
 }
 
 /*!
@@ -507,8 +417,8 @@ void Adafruit_SSD1351::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t w,
   
   writeCommand(SSD1351_CMD_SETROW); // Y range
   
-  out_arr[0] = x1; 
-  out_arr[1] = x2; 
+  out_arr[0] = y1; 
+  out_arr[1] = y2; 
   while(!SPI.transfer(out_arr,in_arr, 2, dma_event))
     chThdSleepMicroseconds(1);
   
