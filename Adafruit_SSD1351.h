@@ -31,6 +31,7 @@
 #define _Adafruit_SSD1351_H_
 
 #include <Adafruit_SPITFT.h>
+#include "ChRt.h"
 
 // These #defines are DEPRECATED but present for older code compatibility:
 #define SSD1351WIDTH 128  ///< DEPRECATED screen width
@@ -99,6 +100,10 @@ public:
       invert(boolean i),        // For compatibility with old code
       enableDisplay(boolean enable),
       setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+
+    // New fill screen command that allows us to use SPI DMA transfers. 
+    void fill_screen(uint16_t color);
+  
 };
 
 #endif // _Adafruit_SSD1351_H_

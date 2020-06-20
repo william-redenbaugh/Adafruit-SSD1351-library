@@ -39,7 +39,7 @@
 #if defined(ARDUINO_ARCH_ARC32)
 #define SPI_DEFAULT_FREQ 16000000 ///< ARC32 SPI default frequency
 #elif defined(__AVR__) || defined(TEENSYDUINO)
-#define SPI_DEFAULT_FREQ 8000000 ///< AVR SPI default frequency
+#define SPI_DEFAULT_FREQ 36000000 ///< AVR SPI default frequency
 #elif defined(__SAMD51__)
 #define SPI_DEFAULT_FREQ 12000000 ///< M4 SPI default frequency
 #elif defined(ESP8266) || defined(ARDUINO_MAXIM)
@@ -274,6 +274,38 @@ void Adafruit_SSD1351::begin(uint32_t freq) {
 
 // GFX FUNCTIONS -----------------------------------------------------------
 
+/**************************************************************************/
+/*!
+   @brief    Fill the screen completely with one color. Update in subclasses if desired!
+    @param    color 16-bit 5-6-5 Color to fill with
+*/
+/**************************************************************************/
+void Adafruit_SSD1351::fill_screen(uint16_t color) {
+    
+    uint16_t i = 0; 
+    startWrite();
+    setAddrWindow(0, 0, _width, _height);
+
+    for(uint8_t x = 0; x < _width; x++){
+        for(uint8_t y = 0; y < _height; y++){
+            out_arr[i] = color >> 8;
+            i++; 
+            out_arr[i] = color; 
+            i++;
+        }
+    }
+
+    uint32_t compl_speed = (i * 8)/36000 + 2;
+
+    // Doing a DMA transfer. 
+    hwspi._spi->transfer(out_arr, in_arr, 32768, dma_event);
+
+    // Should take about this long to push up animation
+    chThdSleepMilliseconds(compl_speed);    
+    endWrite();
+}
+
+
 /*!
     @brief   Set origin of (0,0) and orientation of OLED display
     @param   r
@@ -367,6 +399,7 @@ void Adafruit_SSD1351::invert(boolean i) { invertDisplay(i); }
              Height of rectangle.
     @return  None (void).
 */
+
 void Adafruit_SSD1351::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t w,
                                      uint16_t h) {
 
@@ -375,13 +408,23 @@ void Adafruit_SSD1351::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t w,
     ssd1351_swap(x1, y1);
     ssd1351_swap(x2, y2);
   }
+
   writeCommand(SSD1351_CMD_SETCOLUMN); // X range
-  spiWrite(x1);
-  spiWrite(x2);
+  
+  out_arr[0] = x1; 
+  out_arr[1] = x2; 
+  while(!SPI.transfer(out_arr, in_arr, 2, dma_event))
+    chThdSleepMicroseconds(1);
+  
   writeCommand(SSD1351_CMD_SETROW); // Y range
-  spiWrite(y1);
-  spiWrite(y2);
+  
+  out_arr[0] = x1; 
+  out_arr[1] = x2; 
+  while(!SPI.transfer(out_arr,in_arr, 2, dma_event))
+    chThdSleepMicroseconds(1);
+  
   writeCommand(SSD1351_CMD_WRITERAM); // Begin write
+
 }
 
 /**************************************************************************/
